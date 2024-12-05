@@ -266,6 +266,7 @@ public class V_JugadorCercat extends JFrame implements ActionListener {
             tableModel.addRow(fila);
         }
     }
+    
 
     @Override
     public void actionPerformed(ActionEvent e) {

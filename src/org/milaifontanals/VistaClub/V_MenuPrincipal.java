@@ -17,6 +17,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import org.milaifontanals.InterficiePersistencia_P1.*;
+import org.milaifontanals.VistaClub.GestioEquips.V_GestioEquips;
 
 
 /**
@@ -105,7 +106,12 @@ public class V_MenuPrincipal extends JFrame implements ActionListener {
                 Logger.getLogger(V_MenuPrincipal.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else if (e.getSource() == btnGestioEquips) {
-            System.out.println("Abrir gestión de equipos...");
+            this.dispose();
+            try {
+                new V_GestioEquips(this.gDB).setVisible(true);
+            } catch (ExceptionClubDB ex) {
+                Logger.getLogger(V_MenuPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+            }
         } else if (e.getSource() == btnExportarDades) {
             System.out.println("Exportar datos...");
         } else if (e.getSource() == btnLogout) {
