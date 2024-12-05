@@ -47,14 +47,14 @@ import org.milaifontanals.VistaClub.V_MenuPrincipal;
  * @author kevin
  */
 public class V_GestioJugador extends JFrame implements ActionListener {
-    private JButton btnListarCategoria, btnCerca, btnListarFecha,btnEditar, btnFotoUpload, btnAlta, btnModificar,btnCancelar;
+    private JButton btnListarCategoria, btnCerca, btnListarFecha,btnEditar, btnFotoUpload, btnAlta, btnModificar,btnCancelar,btnEliminarjugador,btnBaixaEquipsJugador;
     private JPanel consultaPanel, altaModPanel, baixaPanel;
     private JTabbedPane tabbedPane;
-    private JTextField txtNom, txtCognom, txtNIF, txtFecha,txtNomModi,txtCognomModi, txtIDLegal, txtIBAN, txtAdrecaModi,txtLocalitatModi, txtCodiPostalModi;
+    private JTextField txtNom, txtCognom, txtNIF, txtFecha,txtNomModi,txtCognomModi, txtIDLegal, txtIBAN, txtAdrecaModi,txtLocalitatModi, txtCodiPostalModi,txtNIFBaixa;
     private JComboBox<Categoria> comboCategoria;
     private IGestorDB gDB;
     private JTable tableJugadors;
-    private JLabel lblError,lblErrorGlobalAlta,lblErrorNom,lblErrorCognom,lblErrorNaix,lblErrorNif,lblErrorIban,lblErrorAdreca;
+    private JLabel lblError,lblErrorGlobalAlta,lblErrorNom,lblErrorCognom,lblErrorNaix,lblErrorNif,lblErrorIban,lblErrorAdreca,lblNomCognom;
     private DefaultTableModel tableModel;
     private JDateChooser dateChooser, dateChooserNaixement;
     private JRadioButton rbH, rbD,rbSi,rbNo; 
@@ -84,8 +84,7 @@ public class V_GestioJugador extends JFrame implements ActionListener {
         tabbedPane.addTab("Alta-Modificació", altaModPanel);
         
         
-        baixaPanel = new JPanel();
-        baixaPanel.add(new JLabel("Baixa (Pendiente de implementación)"));
+        baixaPanel = crearBaixaPanel();
         tabbedPane.addTab("Baixa", baixaPanel);
         
         lblError = new JLabel("");
@@ -109,7 +108,142 @@ public class V_GestioJugador extends JFrame implements ActionListener {
         */
         
     }
-    
+    private JPanel crearBaixaPanel() {
+        JPanel baixaPanel = new JPanel();
+        baixaPanel.setLayout(null); // Layout absoluto
+
+        // Etiqueta y campo de texto para NIF
+        JLabel lblNIF = new JLabel("ID Legal");
+        lblNIF.setBounds(50, 30, 100, 25);
+        baixaPanel.add(lblNIF);
+
+        txtNIFBaixa = new JTextField();
+        txtNIFBaixa.setBounds(150, 30, 150, 25);
+        baixaPanel.add(txtNIFBaixa);
+
+        // Etiqueta para mostrar el nombre completo del jugador
+        lblNomCognom = new JLabel("");
+        lblNomCognom.setBounds(320, 30, 300, 100);
+        lblNomCognom.setFont(new Font("Arial", Font.BOLD, 18)); 
+        baixaPanel.add(lblNomCognom);
+
+        // Tabla para mostrar los equipos
+        String[] columnNames = {"Temporada", "Equip", "Categoria","Tipus"};
+        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
+        JTable tablaEquips = new JTable(tableModel);
+        tablaEquips.setEnabled(false); // La tabla no será editable
+
+        JScrollPane scrollPane = new JScrollPane(tablaEquips);
+        scrollPane.setBounds(100, 140, 400, 150);
+        baixaPanel.add(scrollPane);
+
+        btnBaixaEquipsJugador = new JButton("Baixa dels equips");
+        btnBaixaEquipsJugador.setBounds(100, 400, 150, 30);
+        btnBaixaEquipsJugador.setEnabled(false); // Por defecto está deshabilitado
+        baixaPanel.add(btnBaixaEquipsJugador);
+
+        // Botón "Eliminar"
+        btnEliminarjugador = new JButton("Eliminar Jugador");
+        btnEliminarjugador.setBounds(400, 400, 150, 30);
+        btnEliminarjugador.setEnabled(false); // Por defecto está deshabilitado
+        baixaPanel.add(btnEliminarjugador);
+
+        // Acción al introducir el NIF
+        txtNIFBaixa.addActionListener(e -> {
+
+            String nif = txtNIFBaixa.getText().trim();
+            try {
+                if(gDB.existenciaJugador(new Jugador(nif))>0){
+                    Jugador jugador = gDB.cercaJugadorIDLegal(nif);
+                    lblNomCognom.setText("<html>"+jugador.getNom() + " " + jugador.getCognom()+"<br>"+jugador.getDataNaix()+"</html>");
+
+                    List<Equip> equips = gDB.llistatEquipsDelJugador(jugador); // Método de base de datos
+                    tableModel.setRowCount(0); 
+
+                    for (Equip equip : equips) {
+                        tableModel.addRow(new Object[]{equip.getTemporada(), equip.getNom(),equip.getCategoria().name(),equip.getTipus()});
+                    }
+                    btnBaixaEquipsJugador.setEnabled(!equips.isEmpty());
+                    btnEliminarjugador.setEnabled(equips.isEmpty());
+                }else{
+                    lblNomCognom.setText("<html> No hi ha cap jugador <br>amb aquestes credencials. </html>");
+                }
+            } catch (ExceptionClubDB ex) {
+                lblNomCognom.setText("Jugador no trobat");
+                btnEliminarjugador.setEnabled(false);
+                tableModel.setRowCount(0);
+            } catch (ExceptionClub ex) {
+                lblNomCognom.setText("NIF incorrecte");
+            }
+        });
+        btnBaixaEquipsJugador.addActionListener(e ->{
+            String nif = txtNIFBaixa.getText().trim();
+            try{
+                if(gDB.existenciaJugador(new Jugador(nif))>0){        
+                    Jugador j=gDB.cercaJugadorIDLegal(nif);
+                    gDB.elimarMembresiaTotsEquips(j);
+                    int confirm = JOptionPane.showConfirmDialog(
+                        baixaPanel, 
+                        "Estàs segur que vols eliminar les associacions del jugador amb els equips?", 
+                        "Confirmació d'eliminació", 
+                        JOptionPane.YES_NO_OPTION
+                    );
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        gDB.confirmarCanvis();
+                                          
+                        lblNomCognom.setText("<html>" + j.getNom() + " " + j.getCognom() + "<br>" + j.getDataNaix() + "</html>");
+                        List<Equip> equips = gDB.llistatEquipsDelJugador(j); // Lista actualizada de equipos
+                        tableModel.setRowCount(0);
+                        for (Equip equip : equips) {
+                            tableModel.addRow(new Object[]{equip.getTemporada(), equip.getNom(), equip.getCategoria().name(), equip.getTipus()});
+                        }
+                        btnBaixaEquipsJugador.setEnabled(!equips.isEmpty());
+                        btnEliminarjugador.setEnabled(equips.isEmpty());  
+                    }else{
+                         gDB.desferCanvis();
+                    }
+                }else{
+                    lblNomCognom.setText("Aquest jugador no existeix.");
+                }
+            } catch (ExceptionClubDB ex) {
+                lblNomCognom.setText(ex.getMessage());
+            } catch (ExceptionClub ex) {
+                lblNomCognom.setText(ex.getMessage());
+            }
+        });
+        // Acción del botón "Eliminar"
+        btnEliminarjugador.addActionListener(e -> {
+            String nif = txtNIFBaixa.getText().trim();
+            try {
+                if(gDB.existenciaJugador(new Jugador(nif))>0){ 
+                    gDB.deleteJugador(gDB.cercaJugadorIDLegal(nif));
+                    int confirm = JOptionPane.showConfirmDialog(
+                        baixaPanel, 
+                        "Estàs segur que vols eliminar el jugador?", 
+                        "Confirmació d'eliminació", 
+                        JOptionPane.YES_NO_OPTION
+                    );
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        gDB.confirmarCanvis();
+                        txtNIFBaixa.setText("");
+                        lblNomCognom.setText("");
+                        tableModel.setRowCount(0); 
+                        btnEliminarjugador.setEnabled(false);
+                    }else{
+                        gDB.desferCanvis();
+                    }
+                }else{
+                    lblNomCognom.setText("Aquest jugador no existeix.");
+                }
+            } catch (ExceptionClubDB ex) {
+                lblNomCognom.setText(ex.getMessage());
+            } catch (ExceptionClub ex) {
+                lblNomCognom.setText(ex.getMessage());
+            }
+        });
+
+        return baixaPanel;
+    }
     // Método para crear el panel de "Consulta"
     private JPanel crearConsultaPanel() {
         JPanel panel = new JPanel();
