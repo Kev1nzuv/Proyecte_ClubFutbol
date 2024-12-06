@@ -29,6 +29,7 @@ import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
 import org.milaifontanals.CapaModel_P1.Categoria;
 import org.milaifontanals.CapaModel_P1.Equip;
+import org.milaifontanals.CapaModel_P1.ExceptionClub;
 import org.milaifontanals.InterficiePersistencia_P1.ExceptionClubDB;
 import org.milaifontanals.InterficiePersistencia_P1.IGestorDB;
 
@@ -40,20 +41,21 @@ public class V_GestioEquips extends JFrame implements ActionListener {
     private JTabbedPane tabbedPane;
     private JPanel llistarPanel, crearPanel, editarPanel, eliminarPanel, informePanel;
     private IGestorDB gDB;
-    private JComboBox comboFiltre,comboCategoria, comboTemporada;
-    private DefaultTableModel tableModel;
-    private JTable table;
+    private JComboBox comboFiltre, comboTemporada;
+    private JComboBox <Categoria> comboCategoria,comboCategoriaCrear;
+    private DefaultTableModel tableModel,tableModelResul;
+    private JTable table,tableResul;
     private JTextField txtNovaTemporada,txtNomEquipCreat;
-    private JLabel lblErrorTemporada,lblErrorCrearEquip;
+    private JLabel lblErrorTemporada,lblErrorCrearEquip,lblErrorValidar;
     private JButton btnCrearTemporada,btnCrearEquip,btnResulat;
     private ButtonGroup groupTipus;
     private JRadioButton rbMixta,rbMasculi,rbFemeni;
+    private String temporadaResu,nomEquipResul,tipusResu;
+    private Categoria categoriaResu;
             
     public V_GestioEquips(IGestorDB gDB) throws ExceptionClubDB {
         this.gDB=gDB;
-        
-        
-        
+     
         // Configuración de la ventana
         setTitle("Gestió d'Equip");
         setSize(800, 600);
@@ -181,13 +183,13 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         lblCategoria.setBounds(350, 60, 100, 25);
         panel.add(lblCategoria);
 
-        JComboBox<Categoria> comboCategoria = new JComboBox<>();
-        comboCategoria.setBounds(450, 60, 100, 25);
-        comboCategoria.addItem(null); 
+        comboCategoriaCrear = new JComboBox<>();
+        comboCategoriaCrear.setBounds(450, 60, 100, 25);
+        comboCategoriaCrear.addItem(null); 
         for (Categoria categoria : Categoria.values()) {
-            comboCategoria.addItem(categoria);
+            comboCategoriaCrear.addItem(categoria);
         }
-        panel.add(comboCategoria);
+        panel.add(comboCategoriaCrear);
 
         // Label y Radio Buttons para "Tipus"
         JLabel lblTipus = new JLabel("Tipus:");
@@ -229,25 +231,31 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         btnResulat.addActionListener(this);
         btnResulat.setBounds(400, 190, 100, 25);
         panel.add(btnResulat);
+        
+        lblErrorValidar = new JLabel("");
+        lblErrorValidar.setBounds(100, 200, 600, 105);
+        lblErrorValidar.setForeground(Color.RED);
+        panel.add(lblErrorValidar);
 
         // Botón para crear equipo
         btnCrearEquip = new JButton("Crear Equip");
         btnCrearEquip.addActionListener(this);
-        btnCrearEquip.setBounds(180, 420, 100, 25);
+        btnCrearEquip.setBounds(300, 440, 100, 25);
         panel.add(btnCrearEquip);
         btnCrearEquip.setEnabled(false);
         // Botón de error para crear equipo
         lblErrorCrearEquip = new JLabel("");
-        lblErrorCrearEquip.setBounds(270, 420, 120, 25);
+        lblErrorCrearEquip.setBounds(100, 410,520, 25);
         lblErrorCrearEquip.setForeground(Color.RED);
         panel.add(lblErrorCrearEquip);
 
         // Tabla para mostrar resultados
         String[] columnNames = { "Nom Equip", "Tipus", "Categoria", "Temporada"};
-        DefaultTableModel tableModel = new DefaultTableModel(new Object[0][columnNames.length], columnNames);
-        JTable table = new JTable(tableModel);
-        JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBounds(50, 260, 600, 80);
+        tableModelResul = new DefaultTableModel(new Object[0][columnNames.length], columnNames);
+        tableResul = new JTable(tableModelResul);
+        tableResul.setFont(new Font("Arial", Font.PLAIN, 16));
+        JScrollPane scrollPane = new JScrollPane(tableResul);
+        scrollPane.setBounds(50, 300, 600, 60);
         panel.add(scrollPane);
 
         return panel;
@@ -374,7 +382,43 @@ public class V_GestioEquips extends JFrame implements ActionListener {
             } catch (ExceptionClubDB ex) {
                 lblErrorTemporada.setText(ex.getMessage());
             }
+        }else if(e.getSource() == btnResulat){
+            lblErrorCrearEquip.setText("");
+            if(validarCamps()){
+                nomEquipResul = txtNomEquipCreat.getText().trim();
+                tipusResu = rbFemeni.isSelected() ? "Femení" :
+                               rbMasculi.isSelected() ? "Masculí" : "Mixta";
+                categoriaResu = (Categoria) comboCategoriaCrear.getSelectedItem();
+                temporadaResu = comboTemporada.getSelectedItem().toString();
+                tableModelResul.setRowCount(0);
+                tableModelResul.addRow(new Object[]{nomEquipResul, tipusResu, categoriaResu, temporadaResu});
+                btnCrearEquip.setEnabled(true);
+            }
         }else if(e.getSource() == btnCrearEquip){
+            char tipus = tipusResu.equals("Femení") ? 'D' : tipusResu.equals("Masculí") ? 'H' : 'M';
+            lblErrorCrearEquip.setText("");
+            try {
+                Equip eq_result=new Equip(Integer.parseInt(temporadaResu),nomEquipResul, categoriaResu, tipus);
+                Equip eq=gDB.cercaEquipNom(eq_result);
+                if(eq==null){
+                    gDB.crearEquip(eq_result);
+                    JOptionPane.showMessageDialog(crearPanel, 
+                            "Equip cret correctament.", 
+                            "Èxit", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                            gDB.confirmarCanvis();
+                            actualitzarPanel();
+                }else{
+                    lblErrorCrearEquip.setText("Ja hi ha un equip amb aquest nom, aquesta temporada.");
+                    btnCrearEquip.setEnabled(false);    
+                } 
+            } catch (ExceptionClub ex) {
+                lblErrorCrearEquip.setText(ex.getMessage());
+                btnCrearEquip.setEnabled(false);   
+            } catch (ExceptionClubDB ex) {
+                lblErrorCrearEquip.setText(ex.getMessage());
+                btnCrearEquip.setEnabled(false);    
+            }
             
         }
         
@@ -390,9 +434,54 @@ public class V_GestioEquips extends JFrame implements ActionListener {
             }
             int temporadaActual = Calendar.getInstance().get(Calendar.YEAR);
             comboTemporada.setSelectedItem(String.valueOf(temporadaActual));
+            txtNovaTemporada.setText("");
         } catch (ExceptionClubDB ex) {
             lblErrorTemporada.setText(ex.getMessage());
         }
+    }
+    private boolean validarCamps() {
+        txtNomEquipCreat.setBackground(Color.WHITE);
+        comboCategoriaCrear.setBackground(Color.WHITE);
+        comboTemporada.setBackground(Color.WHITE);
+        rbFemeni.setForeground(Color.BLACK);
+        rbMasculi.setForeground(Color.BLACK);
+        rbMixta.setForeground(Color.BLACK);
+        lblErrorValidar.setText("");
+        String error="Tots els camps son obligatoris. ";
+        boolean valid=true;
+        if (comboTemporada.getSelectedItem() == null) {
+            comboTemporada.setBackground(Color.PINK);
+            valid=false;
+        }
+
+        // Verificar que la categoría esté seleccionada
+        if (comboCategoriaCrear.getSelectedItem() == null) {
+            comboCategoriaCrear.setBackground(Color.PINK);
+            error+=" Selecciona una categoria.";
+            valid=false;
+        }
+
+        // Verificar que se haya seleccionado un tipo
+        if (!rbFemeni.isSelected() && !rbMasculi.isSelected() && !rbMixta.isSelected()) {
+            rbFemeni.setForeground(Color.RED);
+            rbMasculi.setForeground(Color.RED);
+            rbMixta.setForeground(Color.RED);
+             valid=false;
+        }
+
+        // Verificar que el nombre del equipo no esté vacío
+        if (txtNomEquipCreat.getText().trim().isEmpty()) {
+            txtNomEquipCreat.setBackground(Color.PINK);
+            valid=false;
+        }
+    
+        if(valid){
+            lblErrorValidar.setText("");
+        }else{
+            lblErrorValidar.setText(error);
+            return false;
+        }
+        return true;
     }
         
 }
