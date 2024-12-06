@@ -30,6 +30,7 @@ import javax.swing.table.DefaultTableModel;
 import org.milaifontanals.CapaModel_P1.Categoria;
 import org.milaifontanals.CapaModel_P1.Equip;
 import org.milaifontanals.CapaModel_P1.ExceptionClub;
+import org.milaifontanals.CapaModel_P1.Jugador;
 import org.milaifontanals.InterficiePersistencia_P1.ExceptionClubDB;
 import org.milaifontanals.InterficiePersistencia_P1.IGestorDB;
 
@@ -41,13 +42,13 @@ public class V_GestioEquips extends JFrame implements ActionListener {
     private JTabbedPane tabbedPane;
     private JPanel llistarPanel, crearPanel, editarPanel, eliminarPanel, informePanel;
     private IGestorDB gDB;
-    private JComboBox comboFiltre, comboTemporada;
+    private JComboBox comboFiltre, comboTemporada,comboTemporadaEditar;
     private JComboBox <Categoria> comboCategoria,comboCategoriaCrear;
-    private DefaultTableModel tableModel,tableModelResul;
-    private JTable table,tableResul;
-    private JTextField txtNovaTemporada,txtNomEquipCreat;
+    private DefaultTableModel tableModel,tableModelResul,Modelposibles,ModelJugadorsEquip;
+    private JTable table,tableResul,tableJugadorsposibles,tableJugadorsEquip;
+    private JTextField txtNovaTemporada,txtNomEquipCreat,txtNomEquipCerca;
     private JLabel lblErrorTemporada,lblErrorCrearEquip,lblErrorValidar;
-    private JButton btnCrearTemporada,btnCrearEquip,btnResulat;
+    private JButton btnCrearTemporada,btnCrearEquip,btnResulat,btnEditarEquip,btnInsertJugador,btnBaixaJugador,btnGuardar,btnDesfer;
     private ButtonGroup groupTipus;
     private JRadioButton rbMixta,rbMasculi,rbFemeni;
     private String temporadaResu,nomEquipResul,tipusResu;
@@ -73,8 +74,8 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         crearPanel = crearEquipTemporada();
         tabbedPane.addTab("Crear", crearPanel);
 
-        editarPanel = crearPanelBase("Editar Equip");
-        tabbedPane.addTab("Editar Equip", editarPanel);
+        editarPanel = crearEditarEquip();
+        tabbedPane.addTab("Fitxa Equip", editarPanel);
 
         eliminarPanel = crearPanelBase("Eliminar Equip");
         tabbedPane.addTab("Eliminar", eliminarPanel);
@@ -85,6 +86,96 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         // Añadir el TabbedPane a la ventana
         add(tabbedPane);
     }
+    private JPanel crearEditarEquip() throws ExceptionClubDB {
+        
+        JPanel panel = new JPanel();
+        panel.setLayout(null);
+         JLabel lblTemporada = new JLabel("Temporada:");
+        lblTemporada.setBounds(50, 20, 100, 25);
+        panel.add(lblTemporada);
+
+        List<Integer> llistatTemporades = gDB.LlistatTemporades();
+        String[] opcionsCombo = new String[llistatTemporades.size()];
+        int index = 0; 
+        for (Integer temporada : llistatTemporades) {
+            opcionsCombo[index] = String.valueOf(temporada); 
+            index++;
+        }
+        
+        comboTemporadaEditar = new JComboBox<>(opcionsCombo);
+        comboTemporadaEditar.setBounds(120, 20, 80, 25);
+        comboTemporadaEditar.addActionListener(this);      
+        panel.add(comboTemporadaEditar);
+
+         int temporadaActual = Calendar.getInstance().get(Calendar.YEAR);
+        comboTemporadaEditar.setSelectedItem(String.valueOf(temporadaActual));
+        
+        // Nombre del equipo
+        JLabel lblNomEquip = new JLabel("Nom:");
+        lblNomEquip.setBounds(300, 20, 100, 25);
+        panel.add(lblNomEquip);
+
+        txtNomEquipCerca = new JTextField();
+        txtNomEquipCerca.setBounds(350, 20, 150, 25);
+        panel.add(txtNomEquipCerca);
+
+        // Botón de Fitxa Equip (detrás del nombre del equipo)
+        btnEditarEquip = new JButton("Editar Equip");
+        btnEditarEquip.setBounds(510, 20, 120, 25);
+        btnEditarEquip.addActionListener(this);
+        panel.add(btnEditarEquip);
+
+        // Buscar jugadores (en la parte de la izquierda)
+        JLabel lblJugadorsposibles = new JLabel("Jugadors possibles");
+        lblJugadorsposibles.setFont(new Font("Arial", Font.BOLD, 18)); 
+        lblJugadorsposibles.setBounds(50, 80, 250, 25);
+        panel.add(lblJugadorsposibles);
+
+        // Tabla de jugadores disponibles (izquierda)
+        String[] columnesPosibles= {"NIF", "Cognom", "Pot ser Titular"};
+        Modelposibles = new DefaultTableModel(new Object[0][columnesPosibles.length], columnesPosibles);
+        tableJugadorsposibles = new JTable(Modelposibles);
+        JScrollPane posiblesScroll = new JScrollPane(tableJugadorsposibles);
+        posiblesScroll.setBounds(30, 110, 300, 250);
+        panel.add(posiblesScroll);
+
+        // Lista de jugadores seleccionados (derecha)
+        JLabel lblJugadorsSeleccionats = new JLabel("Jugadors de l'equip");
+        lblJugadorsSeleccionats.setFont(new Font("Arial", Font.BOLD, 18)); 
+        lblJugadorsSeleccionats.setBounds(400, 80, 250, 25);
+        panel.add(lblJugadorsSeleccionats);
+        
+        String[] columnesEquip= {"NIF", "Cognom", "Titular"};
+        ModelJugadorsEquip = new DefaultTableModel(new Object[0][columnesEquip.length], columnesEquip);
+        tableJugadorsEquip = new JTable(ModelJugadorsEquip);
+        JScrollPane selectedScrollPane = new JScrollPane(tableJugadorsEquip);
+        selectedScrollPane.setBounds(380, 110, 300, 250);
+        panel.add(selectedScrollPane);
+
+        btnInsertJugador = new JButton(">");
+        btnInsertJugador.setBounds(330, 150, 50, 30);
+        btnInsertJugador.addActionListener(this);
+        panel.add(btnInsertJugador);
+
+        btnBaixaJugador = new JButton("<");
+        btnBaixaJugador.setBounds(330, 200, 50, 30);
+        btnBaixaJugador.addActionListener(this);
+        panel.add(btnBaixaJugador);
+
+        
+        btnGuardar = new JButton("Guardar Canvis");
+        btnGuardar.addActionListener(this);
+        btnGuardar.setBounds(150, 400, 150, 25);
+        panel.add(btnGuardar);
+        
+        btnDesfer = new JButton("Desfer Canvis");
+        btnDesfer.addActionListener(this);
+        btnDesfer.setBounds(350, 400, 150, 25);
+        panel.add(btnDesfer);
+
+        return panel;
+    }
+    
     private JPanel crearLlistarPanel() throws ExceptionClubDB {
         JPanel panel = new JPanel();
         panel.setLayout(null);
@@ -420,6 +511,31 @@ public class V_GestioEquips extends JFrame implements ActionListener {
                 btnCrearEquip.setEnabled(false);    
             }
             
+        }else if(e.getSource() == btnEditarEquip){
+            try {
+                Equip eq_cercat=new Equip(Integer.parseInt(comboTemporadaEditar.getSelectedItem().toString()),txtNomEquipCerca.getText());
+                Equip eq_existeix=gDB.cercaEquipNom(eq_cercat);
+                if(eq_existeix==null){
+                    JOptionPane.showMessageDialog(crearPanel, 
+                            "No s'ha trobat cap equip a la tempara "+comboTemporadaEditar.getSelectedItem().toString()+ 
+                                    " amb aquest nom "+txtNomEquipCerca.getText(), 
+                            "Èxit", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                }else{
+                    omplirJugadorsPosibles(eq_existeix);
+                    omplirJugadorsEquip(eq_existeix);
+                }
+            } catch (ExceptionClub ex) {
+                JOptionPane.showMessageDialog(crearPanel, 
+                            ex.getMessage(), 
+                            "Èxit", 
+                            JOptionPane.INFORMATION_MESSAGE);
+            } catch (ExceptionClubDB ex) {
+                JOptionPane.showMessageDialog(crearPanel, 
+                            ex.getMessage(), 
+                            "Èxit", 
+                            JOptionPane.INFORMATION_MESSAGE);
+            }
         }
         
     
@@ -482,6 +598,35 @@ public class V_GestioEquips extends JFrame implements ActionListener {
             return false;
         }
         return true;
+    }
+    public void omplirJugadorsPosibles(Equip eq) throws ExceptionClubDB {
+    // Limpiamos la tabla antes de rellenar
+        Modelposibles.setRowCount(0);
+        List <Jugador> jugadorsPosibles=gDB.llistatEquipsPosiblesJugador(eq);
+        // Agregamos los jugadores a la tabla
+        for (Jugador jugador : jugadorsPosibles) {
+            Object[] rowData = {
+                jugador.getNif(),
+                jugador.getCognom(),
+                jugador.getCategoriaJugador().equals(eq.getCategoria())
+            };
+            Modelposibles.addRow(rowData);
+        }
+    }
+    public void omplirJugadorsEquip(Equip eq) throws ExceptionClubDB {
+        // Limpiamos la tabla antes de rellenar
+        ModelJugadorsEquip.setRowCount(0);
+        List <Jugador> jugadorsEquip=gDB.LlistatJugadorsUnEquip(eq);
+
+        // Agregamos los jugadores a la tabla
+        for (Jugador jugador : jugadorsEquip) {
+            Object[] rowData = {
+                jugador.getNif(),           // NIF del jugador
+                jugador.getCognom(),       // Apellido del jugador
+                gDB.asossiacioEquiJugadorTitular(jugador.getId(),eq.getId())    
+            };
+            ModelJugadorsEquip.addRow(rowData);
+        }
     }
         
 }
