@@ -28,17 +28,17 @@ public class V_MenuPrincipal extends JFrame implements ActionListener {
     private JButton btnGestioJugadors, btnGestioEquips, btnExportarDades, btnLogout;
     private JLabel lblTitle, lblCalendar,lblCalendartxt;
     private JPanel pnlMain;
-    private IGestorDB gDB;
+    private IGestorDB gDB=null;
      // Constructor
     public V_MenuPrincipal(IGestorDB gDB) {
-        // Configuración básica de la ventana
+     
         this.gDB=gDB;
-        setSize(800, 600); // Tamaño de la ventana
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Acción al cerrar
-        setLayout(null); // Usaremos posicionamiento absoluto
+        setSize(800, 600); 
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
+        setLayout(null);
         setTitle("Club Kevin - Menú Principal");
         getContentPane().setBackground(Color.WHITE);
-        // Título principal
+       
         lblTitle = new JLabel("⚽ Club Kevin ⚽");
         lblTitle.setBounds(300, 30, 300, 50);
         lblTitle.setFont(new Font("Segoe UI Emoji", Font.BOLD, 24));

@@ -11,6 +11,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Calendar;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -49,6 +51,9 @@ public class V_GestioEquips extends JFrame implements ActionListener {
             
     public V_GestioEquips(IGestorDB gDB) throws ExceptionClubDB {
         this.gDB=gDB;
+        
+        
+        
         // Configuración de la ventana
         setTitle("Gestió d'Equip");
         setSize(800, 600);
@@ -139,18 +144,19 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         panel.add(lblNovaTemporada);
 
         txtNovaTemporada = new JTextField();
-        txtNovaTemporada.setBounds(180, 20, 100, 25);
+        txtNovaTemporada.setBounds(180, 20, 80, 25);
         panel.add(txtNovaTemporada);
 
         // Botón para crear temporada
         btnCrearTemporada = new JButton("Crear Temporada");
-        btnCrearTemporada.setBounds(300, 20, 180, 25);
+        btnCrearTemporada.setBounds(280, 20, 140, 25);
         btnCrearTemporada.addActionListener(this);
         panel.add(btnCrearTemporada);
 
         // error para crear temporada
         lblErrorTemporada = new JLabel("");
-        lblErrorTemporada.setBounds(490, 20, 80, 25);
+        lblErrorTemporada.setBounds(425, 20, 280, 25);
+        lblErrorTemporada.setForeground(Color.RED);
         panel.add(lblErrorTemporada);
 
         // Label y ComboBox para "Temporada"
@@ -158,7 +164,7 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         lblTemporada.setBounds(50, 60, 100, 25);
         panel.add(lblTemporada);
 
-        List<Integer> llistatTemporades = gDB.LlistatTemporades(); // Obtener temporadas de la base de datos
+        List<Integer> llistatTemporades = gDB.LlistatTemporades(); 
         String[] opcionsCombo = new String[llistatTemporades.size()];
         int index = 0;
         for (Integer temporada : llistatTemporades) {
@@ -335,6 +341,57 @@ public class V_GestioEquips extends JFrame implements ActionListener {
             } catch (ExceptionClubDB ex) {
                 ex.printStackTrace();
             }
+        }else if(e.getSource() == btnCrearTemporada){
+            
+            try{
+                if(!txtNovaTemporada.getText().isEmpty()){
+                    String temporada = txtNovaTemporada.getText().trim(); 
+                    int currentYear = Calendar.getInstance().get(Calendar.YEAR); 
+                    int temporadaInt = Integer.parseInt(temporada);
+                    int maxYear = currentYear + 20;
+                    if (temporadaInt >= 1890 && temporadaInt <= maxYear) {
+                        if(gDB.temporadaExistent(temporadaInt)){
+                            lblErrorTemporada.setText("Aquesta temporada, ja existeix.");
+                        }else{
+                            lblErrorTemporada.setText("");
+                            gDB.afegirTemporada(temporadaInt);
+                            JOptionPane.showMessageDialog(crearPanel, 
+                            "Temporada creada correctament.", 
+                            "Èxit", 
+                            JOptionPane.INFORMATION_MESSAGE);
+                            txtNovaTemporada.setText("");
+                            gDB.confirmarCanvis();
+                            actualitzarPanel();
+                        }           
+                    } else {
+                        lblErrorTemporada.setText("No es valida aquesta temporada.");
+                    }
+                }else{
+                    lblErrorTemporada.setText("Has de posar una temporada.");
+                }
+            }catch(NumberFormatException ex){
+                lblErrorTemporada.setText("Has de posar un any de temporada");
+            } catch (ExceptionClubDB ex) {
+                lblErrorTemporada.setText(ex.getMessage());
+            }
+        }else if(e.getSource() == btnCrearEquip){
+            
+        }
+        
+    
+    }
+    private void actualitzarPanel() {
+        try {
+            
+            List<Integer> llistatTemporades = gDB.LlistatTemporades();
+            comboTemporada.removeAllItems();
+            for (Integer temporada : llistatTemporades) {
+                comboTemporada.addItem(String.valueOf(temporada));
+            }
+            int temporadaActual = Calendar.getInstance().get(Calendar.YEAR);
+            comboTemporada.setSelectedItem(String.valueOf(temporadaActual));
+        } catch (ExceptionClubDB ex) {
+            lblErrorTemporada.setText(ex.getMessage());
         }
     }
         
