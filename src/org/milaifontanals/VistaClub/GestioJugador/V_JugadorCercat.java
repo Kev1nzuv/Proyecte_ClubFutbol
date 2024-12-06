@@ -30,7 +30,8 @@ public class V_JugadorCercat extends JFrame implements ActionListener {
     private JTable table;
     private DefaultTableModel tableModel;
     private JLabel lblFoto, lblEscut, lblNom, lblNif, lblDataNaix,lblrevisio,lblSexe;
-
+    private boolean isProgrammaticChange = false;
+    
     public V_JugadorCercat(IGestorDB gDB, Jugador jugador) throws ExceptionClubDB {
         this.jugador = jugador;
         this.gDB = gDB;
@@ -145,74 +146,59 @@ public class V_JugadorCercat extends JFrame implements ActionListener {
                 // Cambia el índice de 2 a 3 para que se maneje como Boolean en la columna "Titular"
                 return column == 3 ? Boolean.class : String.class; // Checkbox en la cuarta columna (índice 3)
             }
-
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                // Solo la columna de checkboxes es editable
-                return column == 3;
-            }
         };
         table.getColumnModel().getColumn(3).setCellRenderer(new CustomCheckboxRenderer());
         table.getColumnModel().getColumn(3).setCellEditor(new CustomCheckboxEditor());
        // Añadir el TableModelListener
         tableModel.addTableModelListener(e -> {
+            if (isProgrammaticChange) {
+                return; // Ignorar cambios programáticos
+            }
             int row = e.getFirstRow();
             int column = e.getColumn();
 
-            // Verificar si se editó la columna "Titular" (índice 3)
-            if (column == 3) {
+            if (column == 3) { // Columna "Titular"
                 Boolean isChecked = (Boolean) tableModel.getValueAt(row, column);
 
                 try {
-                    // Crear el objeto Equip basado en la temporada seleccionada y el nombre del equipo
-                    Equip eq = new Equip(Integer.parseInt((String) comboFiltre.getSelectedItem()), 
-                                         (String) tableModel.getValueAt(row, 0));
-
-                    // Si el checkbox ha sido desmarcado, no hacer nada
-                    if (!isChecked) {
-                        return; // Solo no hacer nada si el checkbox se desmarca
-                    }
-
-                    // Si el checkbox ha sido marcado, proceder con la validación
-                    Equip equip = gDB.cercaEquipNom(eq);
-
-                    // Verificar que el equipo sea de la misma categoría
-                    if (!this.jugador.getCategoriaJugador().equals(equip.getCategoria())) {
-                        JOptionPane.showMessageDialog(this,
-                                "Error: El jugador no pot ser titular d'un equip de diferent categoria.",
-                                "Error",
-                                JOptionPane.ERROR_MESSAGE);
-                        tableModel.setValueAt(false, row, column); // Desmarcar el checkbox
-                        return; // Salir del método si la validación falla
-                    }
+                    // Obtener datos del equipo seleccionado
+                    Equip eq = new Equip(
+                        Integer.parseInt((String) comboFiltre.getSelectedItem()),
+                        (String) tableModel.getValueAt(row, 0));
                     
 
-                    // Si la validación es exitosa, actualizamos el titular del jugador
-                    this.jugador.setTitular(equip);
-                    gDB.modificarTitularitat(this.jugador);
-                    gDB.confirmarCanvis();
-                    // Desmarcar todos los demás checkboxes, excepto el marcado
-                    for (int i = 0; i < tableModel.getRowCount(); i++) {
-                        if (i != row) {
-                            tableModel.setValueAt(false, i, column);
-                        }
+                    Equip equip = gDB.cercaEquipNom(eq);
+
+                    
+                    if (!this.jugador.getCategoriaJugador().equals(equip.getCategoria())) {
+                        JOptionPane.showMessageDialog(this,
+                            "Error: El jugador no pot ser titular d'un equip de diferent categoria.",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                        isProgrammaticChange = true; // Activar la bandera
+                        tableModel.setValueAt(false, row, column);
+                        isProgrammaticChange = false; // Desactivar la bandera // Revertir cambio
+                        return;
                     }
-                } catch (ExceptionClub ex) {
-                    tableModel.setValueAt(false, row, column); // Desmarcar si ocurre un error
+
+                    // Verificar si ya es titular en otro equipo
+                    Equip titularActual = gDB.esTitular(jugador, equip.getTemporada());
+                    gDB.TreureTitularitat(jugador.getId(), titularActual.getId());
+                    gDB.insertarTitularitat(jugador.getId(), equip.getId());
+                    
+                    gDB.confirmarCanvis();
+                    cargarDadesTaula((String) comboFiltre.getSelectedItem());
+                    
+                    
+                } catch (ExceptionClub | ExceptionClubDB ex) {
+                    tableModel.setValueAt(false, row, column); 
                     JOptionPane.showMessageDialog(this,
-                            "Error: " + ex.getMessage(),
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE);
-                } catch (ExceptionClubDB ex) {
-                    tableModel.setValueAt(false, row, column); // Desmarcar si ocurre un error en la base de datos
-                    JOptionPane.showMessageDialog(this,
-                            "Error en la base de datos: " + ex.getMessage(),
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE);
+                        "Error: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
-
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBounds(20, 60, 450, 470);
@@ -241,10 +227,11 @@ public class V_JugadorCercat extends JFrame implements ActionListener {
         this.jugador.natejar();
         int temporadaSeleccionada = Integer.parseInt(filtre);
         List<Equip> equips = gDB.llistatEquipsDelJugadorFiltreTemp(this.jugador, temporadaSeleccionada);
+        
         // Iterar sobre los equipos obtenidos
         for (Equip equip : equips) {
             // Verificar si el jugador es titular en este equipo
-            boolean esTitular = equip.equals(jugador.getTitular()); // Comparar el equipo con el titular del jugador
+            boolean esTitular = equip.equals(gDB.esTitular(jugador, temporadaSeleccionada)); 
 
             // Obtener los datos del equipo
             String equipName = equip.getNom();  // Nombre del equipo

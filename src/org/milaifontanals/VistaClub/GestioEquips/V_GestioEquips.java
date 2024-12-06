@@ -53,6 +53,7 @@ public class V_GestioEquips extends JFrame implements ActionListener {
     private JRadioButton rbMixta,rbMasculi,rbFemeni;
     private String temporadaResu,nomEquipResul,tipusResu;
     private Categoria categoriaResu;
+    private boolean isProgrammaticChange = false;
             
     public V_GestioEquips(IGestorDB gDB) throws ExceptionClubDB {
         this.gDB=gDB;
@@ -90,7 +91,8 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         
         JPanel panel = new JPanel();
         panel.setLayout(null);
-         JLabel lblTemporada = new JLabel("Temporada:");
+
+        JLabel lblTemporada = new JLabel("Temporada:");
         lblTemporada.setBounds(50, 20, 100, 25);
         panel.add(lblTemporada);
 
@@ -101,16 +103,15 @@ public class V_GestioEquips extends JFrame implements ActionListener {
             opcionsCombo[index] = String.valueOf(temporada); 
             index++;
         }
-        
+
         comboTemporadaEditar = new JComboBox<>(opcionsCombo);
         comboTemporadaEditar.setBounds(120, 20, 80, 25);
         comboTemporadaEditar.addActionListener(this);      
         panel.add(comboTemporadaEditar);
 
-         int temporadaActual = Calendar.getInstance().get(Calendar.YEAR);
+        int temporadaActual = Calendar.getInstance().get(Calendar.YEAR);
         comboTemporadaEditar.setSelectedItem(String.valueOf(temporadaActual));
-        
-        // Nombre del equipo
+
         JLabel lblNomEquip = new JLabel("Nom:");
         lblNomEquip.setBounds(300, 20, 100, 25);
         panel.add(lblNomEquip);
@@ -119,34 +120,122 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         txtNomEquipCerca.setBounds(350, 20, 150, 25);
         panel.add(txtNomEquipCerca);
 
-        // Botón de Fitxa Equip (detrás del nombre del equipo)
         btnEditarEquip = new JButton("Editar Equip");
         btnEditarEquip.setBounds(510, 20, 120, 25);
         btnEditarEquip.addActionListener(this);
         panel.add(btnEditarEquip);
 
-        // Buscar jugadores (en la parte de la izquierda)
         JLabel lblJugadorsposibles = new JLabel("Jugadors possibles");
         lblJugadorsposibles.setFont(new Font("Arial", Font.BOLD, 18)); 
         lblJugadorsposibles.setBounds(50, 80, 250, 25);
         panel.add(lblJugadorsposibles);
 
-        // Tabla de jugadores disponibles (izquierda)
-        String[] columnesPosibles= {"NIF", "Cognom", "Pot ser Titular"};
-        Modelposibles = new DefaultTableModel(new Object[0][columnesPosibles.length], columnesPosibles);
+        // Modelo para tabla de jugadores posibles (no editable)
+        String[] columnesPosibles = {"NIF", "Cognom", "Pot ser Titular"};
+        Modelposibles = new DefaultTableModel(columnesPosibles, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Ninguna celda es editable
+            }
+
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                return columnIndex == 2 ? Boolean.class : String.class; // Checkbox en la tercera columna
+            }
+        };
         tableJugadorsposibles = new JTable(Modelposibles);
         JScrollPane posiblesScroll = new JScrollPane(tableJugadorsposibles);
         posiblesScroll.setBounds(30, 110, 300, 250);
         panel.add(posiblesScroll);
 
-        // Lista de jugadores seleccionados (derecha)
         JLabel lblJugadorsSeleccionats = new JLabel("Jugadors de l'equip");
         lblJugadorsSeleccionats.setFont(new Font("Arial", Font.BOLD, 18)); 
         lblJugadorsSeleccionats.setBounds(400, 80, 250, 25);
         panel.add(lblJugadorsSeleccionats);
-        
-        String[] columnesEquip= {"NIF", "Cognom", "Titular"};
-        ModelJugadorsEquip = new DefaultTableModel(new Object[0][columnesEquip.length], columnesEquip);
+
+        // Modelo para tabla de jugadores del equipo (editable en la tercera columna)
+        String[] columnesEquip = {"NIF", "Cognom", "Titular"};
+        ModelJugadorsEquip = new DefaultTableModel(columnesEquip, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == 2; // Solo la tercera columna es editable
+            }
+
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                return columnIndex == 2 ? Boolean.class : String.class; // Checkbox en la tercera columna
+            }
+        };
+        ModelJugadorsEquip.addTableModelListener(e -> {
+            int row = e.getFirstRow();
+            int column = e.getColumn();
+            
+            if(isProgrammaticChange){
+                return;
+            }
+            // Verificar si se editó la columna "Titular" (índice 2 en tu tabla)
+            if (column == 2) {
+                Boolean isChecked = (Boolean) ModelJugadorsEquip.getValueAt(row, column);
+                String nif = (String) ModelJugadorsEquip.getValueAt(row, 0); 
+
+                try {
+  
+                    Equip eqCercat = new Equip(
+                        Integer.parseInt(comboTemporadaEditar.getSelectedItem().toString()), 
+                        txtNomEquipCerca.getText()
+                    );
+                    Equip eqExisteix = gDB.cercaEquipNom(eqCercat);
+                    Jugador jugador = gDB.cercaJugadorIDLegal(nif); 
+
+                    
+                    if (!isChecked) {
+                        gDB.TreureTitularitat(jugador.getId(), eqExisteix.getId());
+                    }else{
+                        // Validar que la categoría del jugador coincide con la categoría del equipo
+                        if (!jugador.getCategoriaJugador().equals(eqExisteix.getCategoria())) {
+                            JOptionPane.showMessageDialog(
+                                null,
+                                "Error: El jugador no pot ser titular d'un equip de diferent categoria.",
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE
+                            );
+                            isProgrammaticChange = true;
+                            ModelJugadorsEquip.setValueAt(false, row, column);
+                            isProgrammaticChange = false;
+                            return; 
+                        }
+                        Equip titularActual = gDB.esTitular(jugador, eqExisteix.getTemporada());
+                        if(titularActual!=null){
+                            gDB.TreureTitularitat(jugador.getId(), titularActual.getId());
+                            gDB.insertarTitularitat(jugador.getId(), eqExisteix.getId());
+                        }else{
+                            gDB.insertarTitularitat(jugador.getId(), eqExisteix.getId());
+                        }
+                    }
+ 
+                   
+                } catch (ExceptionClub ex) {
+                    // Manejo de errores de lógica del negocio
+                    System.out.println(ex.getMessage());
+                    ModelJugadorsEquip.setValueAt(false, row, column); // Desmarcar el checkbox si ocurre un error
+                    JOptionPane.showMessageDialog(
+                        null,
+                        "Error: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                } catch (ExceptionClubDB ex) {
+                    // Manejo de errores de base de datos
+                    ModelJugadorsEquip.setValueAt(false, row, column); // Desmarcar el checkbox si ocurre un error
+                    JOptionPane.showMessageDialog(
+                        null,
+                        "Error en la base de datos: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        });
         tableJugadorsEquip = new JTable(ModelJugadorsEquip);
         JScrollPane selectedScrollPane = new JScrollPane(tableJugadorsEquip);
         selectedScrollPane.setBounds(380, 110, 300, 250);
@@ -162,12 +251,11 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         btnBaixaJugador.addActionListener(this);
         panel.add(btnBaixaJugador);
 
-        
         btnGuardar = new JButton("Guardar Canvis");
         btnGuardar.addActionListener(this);
         btnGuardar.setBounds(150, 400, 150, 25);
         panel.add(btnGuardar);
-        
+
         btnDesfer = new JButton("Desfer Canvis");
         btnDesfer.addActionListener(this);
         btnDesfer.setBounds(350, 400, 150, 25);
@@ -535,6 +623,18 @@ public class V_GestioEquips extends JFrame implements ActionListener {
                             ex.getMessage(), 
                             "Èxit", 
                             JOptionPane.INFORMATION_MESSAGE);
+            }
+        }else if(e.getSource() == btnGuardar){
+            try {
+                gDB.confirmarCanvis();
+            } catch (ExceptionClubDB ex) {
+                Logger.getLogger(V_GestioEquips.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }else if(e.getSource() == btnDesfer){
+            try {
+                gDB.desferCanvis();
+            } catch (ExceptionClubDB ex) {
+                Logger.getLogger(V_GestioEquips.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         
