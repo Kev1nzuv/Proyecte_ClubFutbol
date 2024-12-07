@@ -817,7 +817,6 @@ public class V_GestioJugador extends JFrame implements ActionListener {
                     File destinationFile = new File(destinationPath);
                     File sourceFile = new File(imgPath);
                     Files.copy(sourceFile.toPath(), destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    JOptionPane.showMessageDialog(null, "Imatge guardada en: " + destinationFile.getAbsolutePath());
                     j.setFoto(destinationDir);
                 } catch (IOException ex) {
                     JOptionPane.showMessageDialog(null, "Error al guardar la imatge: " + ex.getMessage());
@@ -827,7 +826,7 @@ public class V_GestioJugador extends JFrame implements ActionListener {
                 JOptionPane.showMessageDialog(null, "Eps, no hi cap imatge seleccionada.");
             }
 
-        // Insertar el jugador en la base de datos solo si todo fue correcto
+
         if (correcte) {
             try {
                 gDB.insertarJugador(j);

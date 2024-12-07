@@ -175,16 +175,20 @@ public class V_JugadorCercat extends JFrame implements ActionListener {
                             "Error: El jugador no pot ser titular d'un equip de diferent categoria.",
                             "Error",
                             JOptionPane.ERROR_MESSAGE);
-                        isProgrammaticChange = true; // Activar la bandera
+                        isProgrammaticChange = true; 
                         tableModel.setValueAt(false, row, column);
-                        isProgrammaticChange = false; // Desactivar la bandera // Revertir cambio
+                        isProgrammaticChange = false; 
                         return;
                     }
 
                     // Verificar si ya es titular en otro equipo
                     Equip titularActual = gDB.esTitular(jugador, equip.getTemporada());
-                    gDB.TreureTitularitat(jugador.getId(), titularActual.getId());
-                    gDB.insertarTitularitat(jugador.getId(), equip.getId());
+                    if(titularActual==null){
+                        gDB.insertarTitularitat(jugador.getId(), equip.getId());
+                    }else{
+                        gDB.TreureTitularitat(jugador.getId(), titularActual.getId());
+                        gDB.insertarTitularitat(jugador.getId(), equip.getId());
+                    }
                     
                     gDB.confirmarCanvis();
                     cargarDadesTaula((String) comboFiltre.getSelectedItem());

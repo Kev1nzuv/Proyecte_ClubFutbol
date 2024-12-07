@@ -42,13 +42,13 @@ public class V_GestioEquips extends JFrame implements ActionListener {
     private JTabbedPane tabbedPane;
     private JPanel llistarPanel, crearPanel, editarPanel, eliminarPanel, informePanel;
     private IGestorDB gDB;
-    private JComboBox comboFiltre, comboTemporada,comboTemporadaEditar;
+    private JComboBox comboFiltre, comboTemporada,comboTemporadaEditar,comboTemporadaEliminar;
     private JComboBox <Categoria> comboCategoria,comboCategoriaCrear;
-    private DefaultTableModel tableModel,tableModelResul,Modelposibles,ModelJugadorsEquip;
-    private JTable table,tableResul,tableJugadorsposibles,tableJugadorsEquip;
-    private JTextField txtNovaTemporada,txtNomEquipCreat,txtNomEquipCerca;
+    private DefaultTableModel tableModel,tableModelResul,Modelposibles,ModelJugadorsEquip,ModelJugadorsEquipEliminar ;
+    private JTable table,tableResul,tableJugadorsposibles,tableJugadorsEquip,tableJugadorsEquipEliminar;
+    private JTextField txtNovaTemporada,txtNomEquipCreat,txtNomEquipCerca,txtNomEquipEliminar;
     private JLabel lblErrorTemporada,lblErrorCrearEquip,lblErrorValidar;
-    private JButton btnCrearTemporada,btnCrearEquip,btnResulat,btnEditarEquip,btnInsertJugador,btnBaixaJugador,btnGuardar,btnDesfer;
+    private JButton btnCrearTemporada,btnCrearEquip,btnResulat,btnEditarEquip,btnInsertJugador,btnBaixaJugador,btnGuardar,btnDesfer,btnEliminarEquip;
     private ButtonGroup groupTipus;
     private JRadioButton rbMixta,rbMasculi,rbFemeni;
     private String temporadaResu,nomEquipResul,tipusResu;
@@ -78,15 +78,188 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         editarPanel = crearEditarEquip();
         tabbedPane.addTab("Fitxa Equip", editarPanel);
 
-        eliminarPanel = crearPanelBase("Eliminar Equip");
+        eliminarPanel = crearEliminarEquip();
         tabbedPane.addTab("Eliminar", eliminarPanel);
 
-        informePanel = crearPanelBase("Informe");
-        tabbedPane.addTab("Informe", informePanel);
+        /*informePanel = crearPanelBase("Informe");
+        tabbedPane.addTab("Informe", informePanel);*/
 
         // Añadir el TabbedPane a la ventana
         add(tabbedPane);
     }
+    private JPanel crearEliminarEquip() throws ExceptionClubDB {
+        JPanel panel = new JPanel();
+        panel.setLayout(null);
+
+        JLabel lblTemporada = new JLabel("Temporada:");
+        lblTemporada.setBounds(50, 20, 100, 25);
+        panel.add(lblTemporada);
+
+        List<Integer> llistatTemporades = gDB.LlistatTemporades();
+        String[] opcionsCombo = llistatTemporades.stream().map(String::valueOf).toArray(String[]::new);
+
+        comboTemporadaEliminar = new JComboBox<>(opcionsCombo);
+        comboTemporadaEliminar.setBounds(120, 20, 80, 25);
+        comboTemporadaEliminar.addActionListener(this);
+        panel.add(comboTemporadaEliminar);
+
+        int temporadaActual = Calendar.getInstance().get(Calendar.YEAR);
+        comboTemporadaEliminar.setSelectedItem(String.valueOf(temporadaActual));
+
+        JLabel lblNomEquip = new JLabel("Nom:");
+        lblNomEquip.setBounds(300, 20, 100, 25);
+        panel.add(lblNomEquip);
+
+        txtNomEquipEliminar = new JTextField();
+        txtNomEquipEliminar.setBounds(350, 20, 150, 25);
+        panel.add(txtNomEquipEliminar);
+
+        btnEliminarEquip = new JButton("Eliminar Equip");
+        btnEliminarEquip.setBounds(150, 420, 220, 25);
+        btnEliminarEquip.addActionListener(this);
+        panel.add(btnEliminarEquip);
+
+        JLabel lblNomEquipTit = new JLabel("");
+        lblNomEquipTit.setBounds(40, 110, 200, 35);
+        lblNomEquipTit.setFont(new Font("Arial", Font.BOLD, 18)); 
+        panel.add(lblNomEquipTit);
+        
+        JLabel sexeEquip = new JLabel("");
+        sexeEquip.setBounds(40, 150, 200, 35);
+        sexeEquip.setFont(new Font("Arial", Font.BOLD, 18)); 
+        panel.add(sexeEquip);
+        
+        JLabel lbltempEquip = new JLabel("");
+        lbltempEquip.setBounds(40, 190, 200, 35);
+        lbltempEquip.setFont(new Font("Arial", Font.BOLD, 18)); 
+        panel.add(lbltempEquip);
+        
+        JLabel lblEquipCat = new JLabel("");
+        lblEquipCat.setBounds(40, 230, 200, 35);
+        lblEquipCat.setFont(new Font("Arial", Font.BOLD, 18)); 
+        panel.add(lblEquipCat);
+        
+        JLabel jequiptit = new JLabel("");
+        jequiptit.setFont(new Font("Arial", Font.BOLD, 18)); 
+        jequiptit.setBounds(400, 80, 300, 35);
+        panel.add(jequiptit);
+        
+        txtNomEquipEliminar.addActionListener(e -> {
+            String equipNom = txtNomEquipEliminar.getText().trim();
+            try {
+                Equip eq = gDB.cercaEquipNom(new Equip(Integer.parseInt(comboTemporadaEliminar.getSelectedItem().toString()), equipNom));
+                if (eq != null) {
+                    if (ModelJugadorsEquipEliminar == null) {
+                        ModelJugadorsEquipEliminar = new DefaultTableModel(new String[]{"NIF", "Cognom", "Titular"}, 0){
+                            @Override
+                            public boolean isCellEditable(int row, int column) {
+                                return false; 
+                            }
+
+                            @Override
+                            public Class<?> getColumnClass(int columnIndex) {
+                                return columnIndex == 2 ? Boolean.class : String.class;
+                            }
+                        };
+                    }
+                    ModelJugadorsEquipEliminar.setRowCount(0); 
+                    lblNomEquipTit.setText(equipNom.toUpperCase());
+                    String tipus = eq.getTipus() == 'H' ? "MASCULÍ" : (eq.getTipus() == 'D' ? "FEMENÍ" : "MIXTA");
+                    sexeEquip.setText(tipus);
+                    lbltempEquip.setText(comboTemporadaEliminar.getSelectedItem().toString());
+                    lblEquipCat.setText(eq.getCategoria().name());
+                    List<Jugador> jugadorsEquip = gDB.LlistatJugadorsUnEquip(eq);
+                    if(jugadorsEquip.isEmpty()){
+                        jequiptit.setText("Aquest equip no té membres.");
+                    }else{
+                        jequiptit.setText("Jugadors de l'equip.");
+                    }
+                    for (Jugador jugador : jugadorsEquip) {
+                        Object[] rowData = {
+                            jugador.getNif(),
+                            jugador.getCognom(),
+                        gDB.asossiacioEquiJugadorTitular(jugador.getId(), eq.getId())};
+                        ModelJugadorsEquipEliminar.addRow(rowData);
+
+                    tableJugadorsEquipEliminar = new JTable(ModelJugadorsEquipEliminar);
+                    JScrollPane selectedScrollPane = new JScrollPane(tableJugadorsEquipEliminar);
+                    selectedScrollPane.setBounds(380, 110, 300, 250);
+                    panel.add(selectedScrollPane);
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(
+                    null,
+                    "Advertencia: " + "No tenim cap equip aquesta temporada amb aquest nom",
+                    "Advertencia",
+                    JOptionPane.WARNING_MESSAGE
+);
+                }
+            } catch (ExceptionClubDB ex) {
+                JOptionPane.showMessageDialog(
+                                null,
+                                "Error:"+ex.getMessage(),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE
+                            );
+            } catch (ExceptionClub ex) {
+                JOptionPane.showMessageDialog(
+                                null,
+                                "Error:"+ex.getMessage(),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE
+                            );
+            }
+        });
+        btnEliminarEquip.addActionListener(e -> {
+            String equipNom = txtNomEquipEliminar.getText().trim();
+            try {
+                Equip eq = gDB.cercaEquipNom(new Equip(Integer.parseInt(comboTemporadaEliminar.getSelectedItem().toString()), equipNom));
+                List<Jugador> jugadorsEquip = gDB.LlistatJugadorsUnEquip(eq);
+                if(jugadorsEquip.isEmpty()){
+                    gDB.deleteEquip(eq);
+                    gDB.confirmarCanvis();
+                }else{
+                    int confirm = JOptionPane.showConfirmDialog(
+                        panel, 
+                        "Aquest equip té membres, estas segur que vols eliminarlo?", 
+                        "Confirmació d'eliminació", 
+                        JOptionPane.YES_NO_OPTION
+                    );
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        for(Jugador j : jugadorsEquip){
+                            gDB.deleteJugadorEquip(j.getId(), eq.getId());
+                        }
+                        gDB.deleteEquip(eq);
+                        gDB.confirmarCanvis();
+                    }
+                }
+                txtNomEquipEliminar.setText("");
+                lblNomEquipTit.setText(""); 
+                sexeEquip.setText(""); 
+                lbltempEquip.setText(""); 
+                lblEquipCat.setText(""); 
+                jequiptit.setText(""); 
+                panel.revalidate(); 
+                panel.repaint();
+                if (ModelJugadorsEquipEliminar != null) {
+                    ModelJugadorsEquipEliminar.setRowCount(0); // Vaciar la tabla
+                }
+            }catch(Exception ex){
+                JOptionPane.showMessageDialog(
+                                null,
+                                "Error:"+ex.getMessage(),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE
+                            );
+            }
+        });
+        
+
+        return panel;
+    }
+
+
+    
     private JPanel crearEditarEquip() throws ExceptionClubDB {
         
         JPanel panel = new JPanel();
@@ -140,7 +313,7 @@ public class V_GestioEquips extends JFrame implements ActionListener {
 
             @Override
             public Class<?> getColumnClass(int columnIndex) {
-                return columnIndex == 2 ? Boolean.class : String.class; // Checkbox en la tercera columna
+                return columnIndex == 2 ? Boolean.class : String.class;
             }
         };
         tableJugadorsposibles = new JTable(Modelposibles);
@@ -152,7 +325,7 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         lblJugadorsSeleccionats.setFont(new Font("Arial", Font.BOLD, 18)); 
         lblJugadorsSeleccionats.setBounds(400, 80, 250, 25);
         panel.add(lblJugadorsSeleccionats);
-
+        
         // Modelo para tabla de jugadores del equipo (editable en la tercera columna)
         String[] columnesEquip = {"NIF", "Cognom", "Titular"};
         ModelJugadorsEquip = new DefaultTableModel(columnesEquip, 0) {
@@ -173,7 +346,7 @@ public class V_GestioEquips extends JFrame implements ActionListener {
             if(isProgrammaticChange){
                 return;
             }
-            // Verificar si se editó la columna "Titular" (índice 2 en tu tabla)
+       
             if (column == 2) {
                 Boolean isChecked = (Boolean) ModelJugadorsEquip.getValueAt(row, column);
                 String nif = (String) ModelJugadorsEquip.getValueAt(row, 0); 
@@ -261,6 +434,22 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         btnDesfer.setBounds(350, 400, 150, 25);
         panel.add(btnDesfer);
 
+
+        tableJugadorsposibles.getSelectionModel().addListSelectionListener(event -> {
+            if (!event.getValueIsAdjusting() && tableJugadorsposibles.getSelectedRow() != -1) {
+                btnInsertJugador.setEnabled(true);
+                btnBaixaJugador.setEnabled(false);
+            }
+        });
+        tableJugadorsEquip.getSelectionModel().addListSelectionListener(event -> {
+            if (!event.getValueIsAdjusting() && tableJugadorsEquip.getSelectedRow() != -1) {
+                btnInsertJugador.setEnabled(false);
+                btnBaixaJugador.setEnabled(true);
+            }
+        });
+        btnInsertJugador.setEnabled(false);
+        btnBaixaJugador.setEnabled(false);
+        
         return panel;
     }
     
@@ -440,14 +629,7 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         return panel;
     } 
     
-    private JPanel crearPanelBase(String titulo) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BorderLayout());
-        JLabel placeholderLabel = new JLabel(titulo, SwingConstants.CENTER);
-        placeholderLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        panel.add(placeholderLabel, BorderLayout.CENTER);
-        return panel;
-    }
+    
 
     private void cargarDadesTaula() throws ExceptionClubDB {
         // Limpiar la tabla
@@ -636,6 +818,41 @@ public class V_GestioEquips extends JFrame implements ActionListener {
             } catch (ExceptionClubDB ex) {
                 Logger.getLogger(V_GestioEquips.class.getName()).log(Level.SEVERE, null, ex);
             }
+        }else if(e.getSource() == btnInsertJugador){
+            int selectedRow = tableJugadorsposibles.getSelectedRow();
+            if (selectedRow != -1) {
+                String nif = (String) Modelposibles.getValueAt(selectedRow, 0);
+                try {
+                    Equip eq = gDB.cercaEquipNom(new Equip(
+                            Integer.parseInt(comboTemporadaEditar.getSelectedItem().toString()),
+                            txtNomEquipCerca.getText()
+                    ));
+                    Jugador jugador = gDB.cercaJugadorIDLegal(nif);
+                    gDB.insertarJugadorEquip(jugador.getId(), eq.getId()); 
+                    omplirJugadorsPosibles(eq);
+                    omplirJugadorsEquip(eq);
+                } catch (ExceptionClub | ExceptionClubDB ex) {
+                    JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }else if(e.getSource() == btnBaixaJugador){
+            int selectedRow = tableJugadorsEquip.getSelectedRow();
+            if (selectedRow != -1) {
+                String nif = (String) ModelJugadorsEquip.getValueAt(selectedRow, 0); 
+                try {
+                    Equip eq = gDB.cercaEquipNom(new Equip(
+                            Integer.parseInt(comboTemporadaEditar.getSelectedItem().toString()),
+                            txtNomEquipCerca.getText()
+                    ));
+                    Jugador jugador = gDB.cercaJugadorIDLegal(nif);
+                    gDB.deleteJugadorEquip(jugador.getId(), eq.getId());
+
+                    omplirJugadorsPosibles(eq);
+                    omplirJugadorsEquip(eq);
+                } catch (ExceptionClub | ExceptionClubDB ex) {
+                    JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
         }
         
     
@@ -721,8 +938,8 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         // Agregamos los jugadores a la tabla
         for (Jugador jugador : jugadorsEquip) {
             Object[] rowData = {
-                jugador.getNif(),           // NIF del jugador
-                jugador.getCognom(),       // Apellido del jugador
+                jugador.getNif(),           
+                jugador.getCognom(),     
                 gDB.asossiacioEquiJugadorTitular(jugador.getId(),eq.getId())    
             };
             ModelJugadorsEquip.addRow(rowData);
