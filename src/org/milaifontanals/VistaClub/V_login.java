@@ -7,6 +7,7 @@ import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import org.milaifontanals.CapaModel_P1.*;
@@ -45,13 +46,20 @@ public class V_login extends JFrame implements ActionListener{
          try {
             this.gDB = (IGestorDB) Class.forName(nomClassePersistencia).newInstance();
         } catch (Exception ex) {
-            System.out.println(ex.getMessage());
-            ex.printStackTrace();
-        }
-        // Configuración básica de la ventana
-        setSize(600, 400); // Tamaño de la ventana
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Acción al cerrar
-        setLayout(null); // Usaremos posicionamiento absoluto
+            JOptionPane.showMessageDialog(
+                            this,
+                            "Problemes al servidor, si us plau, esperi uns minuts. Disculpeu les molèsties.",
+                            "Alerta",
+                            JOptionPane.WARNING_MESSAGE
+                        );
+            
+        }     
+        setSize(600, 400);
+        int x = (int) ((this.getToolkit().getScreenSize().getWidth() - this.getWidth()) / 2);
+        int y = (int) ((this.getToolkit().getScreenSize().getHeight() - this.getHeight()) / 2);
+        this.setLocation(x, y);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
+        setLayout(null); 
         setTitle("Club Kevin - Login");
         getContentPane().setBackground(Color.WHITE);
         // Título

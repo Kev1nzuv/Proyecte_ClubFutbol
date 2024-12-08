@@ -51,20 +51,26 @@ public class V_JugadorCercat extends JFrame implements ActionListener {
 
         // Foto del jugador
         lblFoto = new JLabel();
-        lblFoto.setBounds(75, 20, 100, 100);
-        lblFoto.setIcon(new ImageIcon(jugador.getFoto()));
+        lblFoto.setBounds(45, 20, 160, 150);
+        ImageIcon icono = new ImageIcon(jugador.getFoto());
+        Image imgOriginal = icono.getImage(); 
+        Image imgEscalada = imgOriginal.getScaledInstance(lblFoto.getWidth(), lblFoto.getHeight(), Image.SCALE_SMOOTH);
+        lblFoto.setIcon(new ImageIcon(imgEscalada));
+        lblFoto.setHorizontalAlignment(SwingConstants.CENTER);
+        lblFoto.setVerticalAlignment(SwingConstants.CENTER);
         panelIzquierdo.add(lblFoto);
+        
 
         // Nombre y Apellidos
         lblNom = new JLabel(jugador.getNom() + " " + jugador.getCognom());
-        lblNom.setBounds(20, 140, 200, 30);
+        lblNom.setBounds(20, 180, 200, 30);
         lblNom.setHorizontalAlignment(SwingConstants.CENTER);
-        lblNom.setFont(new Font("Arial", Font.BOLD, 14));
+        lblNom.setFont(new Font("Arial", Font.BOLD, 18));
         panelIzquierdo.add(lblNom);
 
         // NIF
         lblNif = new JLabel("NIF: " + jugador.getNif());
-        lblNif.setBounds(20, 180, 200, 30);
+        lblNif.setBounds(20, 200, 200, 30);
         lblNif.setHorizontalAlignment(SwingConstants.CENTER);
         panelIzquierdo.add(lblNif);
         
@@ -76,26 +82,33 @@ public class V_JugadorCercat extends JFrame implements ActionListener {
                 case 'D':sexe="Dona";break;               
         }    
         lblSexe = new JLabel("Sexe: "+ sexe);
-        lblSexe.setBounds(10, 200, 200, 30);
+        lblSexe.setBounds(10, 240, 200, 30);
         lblSexe.setHorizontalAlignment(SwingConstants.CENTER);
         panelIzquierdo.add(lblSexe);
 
         // Fecha de nacimiento
         lblDataNaix = new JLabel("<html>Data naixement:<br>" + jugador.getDataNaix() + "</html>");
-        lblDataNaix.setBounds(20, 210, 200, 100);
+        lblDataNaix.setBounds(20, 250, 200, 100);
         lblDataNaix.setHorizontalAlignment(SwingConstants.CENTER);
         panelIzquierdo.add(lblDataNaix);
         
         lblrevisio = new JLabel("<html>Revisió medica:<br> " + jugador.getRivisioMedica()+ "</html>");
-        lblrevisio.setBounds(20, 230, 200, 160);
+        lblrevisio.setBounds(20, 280, 200, 160);
         lblrevisio.setHorizontalAlignment(SwingConstants.CENTER);
         panelIzquierdo.add(lblrevisio);
 
-        // Escudo del equipo
-        lblEscut = new JLabel();
-        lblEscut.setBounds(75, 330, 100, 100);
-        lblEscut.setIcon(new ImageIcon("escudo.png")); 
-        panelIzquierdo.add(lblEscut);
+        
+        JLabel cate=new JLabel("<html>Categoria:<br> "+ jugador.getCategoriaJugador().name()+ "</html>");
+        cate.setBounds(60, 350, 100, 100);
+        cate.setHorizontalAlignment(SwingConstants.CENTER);
+        panelIzquierdo.add(cate);
+        String []adreca=jugador.getAdreca().split("\\$");
+        
+        JLabel adre=new JLabel("<html>Adreça: "+adreca[0]+"<br>"+"Localitat: "+adreca[1]+"<br>"+"Codi Postal: "+adreca[2]+"</html>");
+        adre.setBounds(20, 400, 200, 100);
+        adre.setHorizontalAlignment(SwingConstants.CENTER);
+        panelIzquierdo.add(adre);
+        
 
         // Panel derecho (Tabla y filtro)
         JPanel panelDret = new JPanel();
@@ -125,7 +138,7 @@ public class V_JugadorCercat extends JFrame implements ActionListener {
         
         
         JButton btnVolver = new JButton("Tornar");
-        btnVolver.setBounds(10, 500, 100, 30); // Posición en la parte inferior izquierda
+        btnVolver.setBounds(10, 500, 100, 30); 
         btnVolver.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 dispose();
@@ -213,13 +226,6 @@ public class V_JugadorCercat extends JFrame implements ActionListener {
         
         int anyActual = LocalDate.now().getYear();
         comboFiltre.setSelectedItem(String.valueOf(anyActual));
-        /*
-        // Cargar datos iniciales
-        try {
-            cargarDadesTaula(String.valueOf(anyActual));
-        } catch (ExceptionClubDB ex) {
-            Logger.getLogger(ex.getMessage());
-        }*/
         setVisible(true);
         
         
@@ -237,21 +243,21 @@ public class V_JugadorCercat extends JFrame implements ActionListener {
             // Verificar si el jugador es titular en este equipo
             boolean esTitular = equip.equals(gDB.esTitular(jugador, temporadaSeleccionada)); 
 
-            // Obtener los datos del equipo
-            String equipName = equip.getNom();  // Nombre del equipo
+
+            String equipName = equip.getNom();
             String equipSexe ="";
-            String categoria = equip.getCategoria().name(); // Categoría del equipo
+            String categoria = equip.getCategoria().name();
             switch(equip.getTipus()){
                 case 'H':equipSexe="Masculi";break;
                 case 'D':equipSexe="Femeni";break;
                 case 'M':equipSexe="Mixta";break;
             }
-            // Agregar los datos a la tabla
+   
             Object[] fila = new Object[4];
-            fila[0] = equipName;    // Equip
-            fila[1] = equipSexe;         // Sexe
-            fila[2] = categoria;    // Categoria
-            fila[3] = esTitular;    // Titularidad (checkbox)
+            fila[0] = equipName;   
+            fila[1] = equipSexe;        
+            fila[2] = categoria;    
+            fila[3] = esTitular;  
 
             // Añadir la fila a la tabla
             tableModel.addRow(fila);
@@ -278,7 +284,7 @@ public class V_JugadorCercat extends JFrame implements ActionListener {
             JCheckBox checkbox = new JCheckBox();
             checkbox.setSelected((Boolean) value);
             checkbox.setHorizontalAlignment(SwingConstants.CENTER);
-            checkbox.setEnabled(false); // Siempre deshabilitado en el renderizado
+            checkbox.setEnabled(false); 
             return checkbox;
         }
     }
@@ -290,9 +296,8 @@ public class V_JugadorCercat extends JFrame implements ActionListener {
             checkbox = new JCheckBox();
             checkbox.setHorizontalAlignment(SwingConstants.CENTER);
 
-            // Escuchar clics en el checkbox
+
             checkbox.addActionListener(e -> {
-                // Notificar que el valor ha cambiado
                 fireEditingStopped();
             });
         }
@@ -301,10 +306,8 @@ public class V_JugadorCercat extends JFrame implements ActionListener {
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
             checkbox.setSelected((Boolean) value);
 
-            // Habilitar o deshabilitar el checkbox según su estado
             boolean isTitular = (Boolean) value;
-            checkbox.setEnabled(!isTitular); // Solo habilitar si no es titular actual
-
+            checkbox.setEnabled(!isTitular); 
             return checkbox;
         }
 

@@ -33,7 +33,10 @@ public class V_MenuPrincipal extends JFrame implements ActionListener {
     public V_MenuPrincipal(IGestorDB gDB) {
      
         this.gDB=gDB;
-        setSize(800, 600); 
+        setSize(900, 600);
+        int x = (int) ((this.getToolkit().getScreenSize().getWidth() - this.getWidth()) / 2);
+        int y = (int) ((this.getToolkit().getScreenSize().getHeight() - this.getHeight()) / 2);
+        this.setLocation(x, y);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
         setLayout(null);
         setTitle("Club Kevin - Menú Principal");

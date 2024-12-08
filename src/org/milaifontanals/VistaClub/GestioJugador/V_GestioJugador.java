@@ -65,9 +65,11 @@ public class V_GestioJugador extends JFrame implements ActionListener {
     public V_GestioJugador(IGestorDB gDB) throws ExceptionClubDB {
         this.gDB=gDB;
         
-        // Configuración de la ventana
         setTitle("Gestió Jugadors");
-        setSize(800, 600);
+        setSize(900, 600);
+        int x = (int) ((this.getToolkit().getScreenSize().getWidth() - this.getWidth()) / 2);
+        int y = (int) ((this.getToolkit().getScreenSize().getHeight() - this.getHeight()) / 2);
+        this.setLocation(x, y);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(null);
         
@@ -99,19 +101,21 @@ public class V_GestioJugador extends JFrame implements ActionListener {
         add(tabbedPane);
         
         cargarJugadors(gDB.llistatJugadors(), (Categoria) comboCategoria.getSelectedItem(),dateChooser.getDate(),txtNom.getText().trim(),txtCognom.getText().trim());
-        
-        /*
-        tabbedPane.addChangeListener(e -> {
-            int selectedIndex = tabbedPane.getSelectedIndex();
-        
-        });
-        */
+         
         
     }
     private JPanel crearBaixaPanel() {
         JPanel baixaPanel = new JPanel();
-        baixaPanel.setLayout(null); // Layout absoluto
-
+        baixaPanel.setLayout(null); 
+        JButton btnVolver = new JButton("Tornar");
+                btnVolver.setBounds(5,425, 80, 30); 
+                baixaPanel.add(btnVolver);
+                btnVolver.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        dispose();
+                        new V_MenuPrincipal(gDB).setVisible(true);
+                    }
+        });
         // Etiqueta y campo de texto para NIF
         JLabel lblNIF = new JLabel("ID Legal");
         lblNIF.setBounds(50, 30, 100, 25);
@@ -131,7 +135,7 @@ public class V_GestioJugador extends JFrame implements ActionListener {
         String[] columnNames = {"Temporada", "Equip", "Categoria","Tipus"};
         DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
         JTable tablaEquips = new JTable(tableModel);
-        tablaEquips.setEnabled(false); // La tabla no será editable
+        tablaEquips.setEnabled(false);
 
         JScrollPane scrollPane = new JScrollPane(tablaEquips);
         scrollPane.setBounds(100, 140, 400, 150);
@@ -249,7 +253,15 @@ public class V_GestioJugador extends JFrame implements ActionListener {
         JPanel panel = new JPanel();
         panel.setLayout(null);
         panel.setBackground(Color.WHITE); 
-        
+        JButton btnVolver = new JButton("Tornar");
+                btnVolver.setBounds(5,425, 80, 30); 
+                panel.add(btnVolver);
+                btnVolver.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        dispose();
+                        new V_MenuPrincipal(gDB).setVisible(true);
+                    }
+        });
         // Títulos de los subpaneles
         JLabel lblCercaJugadors = new JLabel("Cercà Jugadors");
         lblCercaJugadors.setFont(new Font("Arial", Font.BOLD, 16));
@@ -327,7 +339,7 @@ public class V_GestioJugador extends JFrame implements ActionListener {
         tableModel = new DefaultTableModel(new String[]{"Nom", "Cognom", "NIF", "Data Naixement", "Sexe", "Categoria"}, 0);
         tableJugadors = new JTable(tableModel);
 
-        // Configurar el TableRowSorter
+        // Configura el sorter
         TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModel);
         tableJugadors.setRowSorter(sorter);
 
@@ -341,7 +353,7 @@ public class V_GestioJugador extends JFrame implements ActionListener {
         }));
 
         JScrollPane scrollPane = new JScrollPane(tableJugadors);
-        scrollPane.setBounds(260, 120, 400, 250);
+        scrollPane.setBounds(240, 110, 450, 250);
         panel.add(scrollPane);
 
         return panel;
@@ -379,7 +391,15 @@ public class V_GestioJugador extends JFrame implements ActionListener {
     public JPanel crearAltaModificacioPanel() {
         JPanel altaModPanel = new JPanel();
         altaModPanel.setLayout(null);
-
+        JButton btnVolver = new JButton("Tornar");
+                btnVolver.setBounds(5,425, 80, 30); 
+                altaModPanel.add(btnVolver);
+                btnVolver.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        dispose();
+                        new V_MenuPrincipal(gDB).setVisible(true);
+                    }
+        });
         // Campo "Nom"
         JLabel lblNom = new JLabel("Nom");
         lblNom.setBounds(20, 20, 80, 25);
@@ -676,7 +696,7 @@ public class V_GestioJugador extends JFrame implements ActionListener {
                 consultaPanel.repaint();
             }
             
-        }else if (e.getSource() == comboCategoria) {
+       }else if (e.getSource() == comboCategoria) {
             try {
                 // Actualizar la tabla cuando se cambia la categoría en el JComboBox
                 cargarJugadors(
@@ -684,7 +704,8 @@ public class V_GestioJugador extends JFrame implements ActionListener {
                         (Categoria) comboCategoria.getSelectedItem(),
                         dateChooser.getDate(),txtNom.getText().trim(),
                         txtCognom.getText().trim()
-                );  } catch (ExceptionClubDB ex) {
+                );  
+            } catch (ExceptionClubDB ex) {
                 Logger.getLogger(V_GestioJugador.class.getName()).log(Level.SEVERE, null, ex);
             }
         }else if(e.getSource() == btnAlta){
@@ -724,10 +745,7 @@ public class V_GestioJugador extends JFrame implements ActionListener {
                     adre+=txtCodiPostalModi.getText();
      
                 
-                        /*Jugador j=new Jugador(txtNomModi.getText().trim(),txtCognomModi.getText().trim(), 
-                        txtIBAN.getText().trim(), txtIDLegal.getText().trim(), 
-                        sexe, localDatenaix, 
-                        rev,adre,destinationDir);*/
+                       
                 lblErrorNif.setText("");
                 lblErrorNom.setText("");
                 lblErrorCognom.setText("");
@@ -804,8 +822,6 @@ public class V_GestioJugador extends JFrame implements ActionListener {
                             correcte = false;
                         }
                     }
-
-        // Guardar la imagen solo si no hay errores
             if (imgPath != null && correcte) {
                 try {
                     String destinationDir = "img/";
@@ -817,7 +833,7 @@ public class V_GestioJugador extends JFrame implements ActionListener {
                     File destinationFile = new File(destinationPath);
                     File sourceFile = new File(imgPath);
                     Files.copy(sourceFile.toPath(), destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    j.setFoto(destinationDir);
+                    j.setFoto(destinationPath);
                 } catch (IOException ex) {
                     JOptionPane.showMessageDialog(null, "Error al guardar la imatge: " + ex.getMessage());
                     correcte = false;
@@ -992,6 +1008,7 @@ public class V_GestioJugador extends JFrame implements ActionListener {
                         modificat.setFoto(novaRuta);
                         gDB.updateJugador(modificat);
                         gDB.confirmarCanvis();
+                        JOptionPane.showMessageDialog(null, "Jugador modificat correctament!");
                         Cancelar();
                 } catch (ExceptionClubDB ex) {
                     lblErrorGlobalAlta.setText(ex.getMessage());  
@@ -1016,9 +1033,7 @@ public class V_GestioJugador extends JFrame implements ActionListener {
                 JOptionPane.showMessageDialog(null, "Imagen seleccionada: " + imgPath);
             }
         }
-        
-        
-        
+    
     }
     public void Cancelar(){
         lblErrorGlobalAlta.setText(""); 

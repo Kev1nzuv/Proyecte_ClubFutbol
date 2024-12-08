@@ -33,6 +33,7 @@ import org.milaifontanals.CapaModel_P1.ExceptionClub;
 import org.milaifontanals.CapaModel_P1.Jugador;
 import org.milaifontanals.InterficiePersistencia_P1.ExceptionClubDB;
 import org.milaifontanals.InterficiePersistencia_P1.IGestorDB;
+import org.milaifontanals.VistaClub.V_MenuPrincipal;
 
 /**
  *
@@ -60,7 +61,10 @@ public class V_GestioEquips extends JFrame implements ActionListener {
      
         // Configuración de la ventana
         setTitle("Gestió d'Equip");
-        setSize(800, 600);
+        setSize(900, 600);
+        int x = (int) ((this.getToolkit().getScreenSize().getWidth() - this.getWidth()) / 2);
+        int y = (int) ((this.getToolkit().getScreenSize().getHeight() - this.getHeight()) / 2);
+        this.setLocation(x, y);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(null);
 
@@ -90,7 +94,15 @@ public class V_GestioEquips extends JFrame implements ActionListener {
     private JPanel crearEliminarEquip() throws ExceptionClubDB {
         JPanel panel = new JPanel();
         panel.setLayout(null);
-
+        JButton btnVolver = new JButton("Tornar");
+                        btnVolver.setBounds(5,425, 80, 30); 
+                        panel.add(btnVolver);
+                        btnVolver.addActionListener(new ActionListener() {
+                            public void actionPerformed(ActionEvent e) {
+                                dispose();
+                                new V_MenuPrincipal(gDB).setVisible(true);
+                            }
+                });
         JLabel lblTemporada = new JLabel("Temporada:");
         lblTemporada.setBounds(50, 20, 100, 25);
         panel.add(lblTemporada);
@@ -264,7 +276,15 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         
         JPanel panel = new JPanel();
         panel.setLayout(null);
-
+        JButton btnVolver = new JButton("Tornar");
+                                btnVolver.setBounds(5,425, 80, 30); 
+                                panel.add(btnVolver);
+                                btnVolver.addActionListener(new ActionListener() {
+                                    public void actionPerformed(ActionEvent e) {
+                                        dispose();
+                                        new V_MenuPrincipal(gDB).setVisible(true);
+                                    }
+                        });
         JLabel lblTemporada = new JLabel("Temporada:");
         lblTemporada.setBounds(50, 20, 100, 25);
         panel.add(lblTemporada);
@@ -456,7 +476,15 @@ public class V_GestioEquips extends JFrame implements ActionListener {
     private JPanel crearLlistarPanel() throws ExceptionClubDB {
         JPanel panel = new JPanel();
         panel.setLayout(null);
-
+        JButton btnVolver = new JButton("Tornar");
+                        btnVolver.setBounds(5,425, 80, 30); 
+                        panel.add(btnVolver);
+                        btnVolver.addActionListener(new ActionListener() {
+                            public void actionPerformed(ActionEvent e) {
+                                dispose();
+                                new V_MenuPrincipal(gDB).setVisible(true);
+                            }
+                });
         // Combobox para Temporada
         JLabel lblTemporada = new JLabel("Temporada");
         lblTemporada.setBounds(50, 20, 100, 25);
@@ -507,7 +535,15 @@ public class V_GestioEquips extends JFrame implements ActionListener {
     private JPanel crearEquipTemporada() throws ExceptionClubDB{
         JPanel panel = new JPanel();
         panel.setLayout(null);
-
+            JButton btnVolver = new JButton("Tornar");
+                        btnVolver.setBounds(5,425, 80, 30); 
+                        panel.add(btnVolver);
+                        btnVolver.addActionListener(new ActionListener() {
+                            public void actionPerformed(ActionEvent e) {
+                                dispose();
+                                new V_MenuPrincipal(gDB).setVisible(true);
+                            }
+                });
         // Label y campo de texto para "Nova Temporada"
         JLabel lblNovaTemporada = new JLabel("Nova Temporada:");
         lblNovaTemporada.setBounds(50, 20, 120, 25);
