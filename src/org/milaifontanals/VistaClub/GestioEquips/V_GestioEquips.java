@@ -528,7 +528,6 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         // Seleccionar la temporada actual
         int temporadaActual = Calendar.getInstance().get(Calendar.YEAR);
         comboFiltre.setSelectedItem(String.valueOf(temporadaActual));
-
         return panel;
     }
 
