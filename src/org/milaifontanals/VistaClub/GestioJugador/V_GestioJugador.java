@@ -886,9 +886,8 @@ public class V_GestioJugador extends JFrame implements ActionListener {
                             rbH.setSelected(true);
                         } else {
                             rbD.setSelected(true);
-                        }
-                        rbD.setEnabled(false);
-                        rbH.setEnabled(false);
+                        }                        
+                        
                         if(j.getRivisioMedica().isAfter(LocalDate.now())){
                             rbSi.setSelected(true); 
                         }else{
@@ -896,7 +895,6 @@ public class V_GestioJugador extends JFrame implements ActionListener {
                         }
                         Date date = Date.from(j.getDataNaix().atStartOfDay(ZoneId.systemDefault()).toInstant());
                         dateChooserNaixement.setDate(date);
-                        dateChooserNaixement.setEnabled(false);
                         String [] adre=j.getAdreca().split("\\$");
                         txtAdrecaModi.setText(adre[0]);
                         txtLocalitatModi.setText(adre[1]);
@@ -978,15 +976,50 @@ public class V_GestioJugador extends JFrame implements ActionListener {
                         lblErrorAdreca.setText(ex.getMessage());
                         correcte=false;
                     }
-
-                    modificat.setDataNaix(j.getDataNaix());
+                    Date naix=dateChooserNaixement.getDate();
+                    LocalDate localDatenaix = naix.toInstant()
+                                            .atZone(ZoneId.systemDefault())
+                                            .toLocalDate();
+                    Categoria novaCategoria=Categoria.calcularCategoria(localDatenaix);
+                    if (!novaCategoria.equals(j.getCategoriaJugador()) && gDB.JugadorNumEquips(j) > 0) {
+                        correcte = false;
+                        int confirm = JOptionPane.showConfirmDialog(
+                            this,
+                            "La nova data de naixement afecta la categoria. Tornar a l'original?",
+                            "Confirmació",
+                            JOptionPane.YES_NO_OPTION
+                        );
+                        if (confirm == JOptionPane.YES_OPTION) {
+                            Date originalDate = Date.from(j.getDataNaix().atStartOfDay(ZoneId.systemDefault()).toInstant());
+                            dateChooserNaixement.setDate(originalDate);
+                        }
+                    } else {
+                        modificat.setDataNaix(localDatenaix); 
+                    }
+                    char sexe;
+                    if (rbH.isSelected()) {
+                        sexe = 'H';
+                    } else if (rbD.isSelected()) {
+                        sexe = 'D';
+                    } else {
+                        sexe = j.getSexe();
+                    }
+                    if (sexe != j.getSexe()) { 
+                        if (gDB.JugadorNumEquips(j) > 0 && !gDB.mateixSexeoMixta(j)) {
+                            lblErrorGlobalAlta.setText("No es pot modificar el sexe.");
+                            correcte = false;
+                        } else {
+                            modificat.setSexe(sexe); 
+                        }
+                    } else {
+                        modificat.setSexe(j.getSexe());
+                    }
                     modificat.setRivisioMedica(revMedi);
-                    modificat.setSexe(j.getSexe());
                     modificat.setId(j.getId());
 
 
-                    String novaRuta = j.getFoto(); // Ruta actual de la imagen
-                    if (imgPath != null && correcte) { // El usuario subió una nueva imagen
+                    String novaRuta = j.getFoto(); 
+                    if (imgPath != null && correcte) { 
                         // Eliminar la imagen anterior
                         File imagenAnterior = new File(j.getFoto());
                         if (imagenAnterior.exists()) {
@@ -1004,12 +1037,14 @@ public class V_GestioJugador extends JFrame implements ActionListener {
                         File sourceFile = new File(imgPath);
                         File destinationFile = new File(novaRuta);
                         Files.copy(sourceFile.toPath(), destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                        
+                        
                     }
-                        modificat.setFoto(novaRuta);
-                        gDB.updateJugador(modificat);
-                        gDB.confirmarCanvis();
-                        JOptionPane.showMessageDialog(null, "Jugador modificat correctament!");
-                        Cancelar();
+                    modificat.setFoto(novaRuta);
+                    gDB.updateJugador(modificat);
+                    gDB.confirmarCanvis();
+                    JOptionPane.showMessageDialog(null, "Jugador modificat correctament!");
+                    Cancelar();
                 } catch (ExceptionClubDB ex) {
                     lblErrorGlobalAlta.setText(ex.getMessage());  
                 } catch (ExceptionClub ex) {
