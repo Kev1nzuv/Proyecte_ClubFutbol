@@ -85,10 +85,7 @@ public class V_GestioEquips extends JFrame implements ActionListener {
         eliminarPanel = crearEliminarEquip();
         tabbedPane.addTab("Eliminar", eliminarPanel);
 
-        /*informePanel = crearPanelBase("Informe");
-        tabbedPane.addTab("Informe", informePanel);*/
-
-        // Añadir el TabbedPane a la ventana
+      
         add(tabbedPane);
     }
     private JPanel crearEliminarEquip() throws ExceptionClubDB {

@@ -17,6 +17,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import org.milaifontanals.InterficiePersistencia_P1.*;
+import org.milaifontanals.VistaClub.ExportacionsReport.V_ExportacionsReport;
 import org.milaifontanals.VistaClub.GestioEquips.V_GestioEquips;
 
 
@@ -60,7 +61,7 @@ public class V_MenuPrincipal extends JFrame implements ActionListener {
         add(btnGestioEquips);
 
         // Botón Exportar Datos
-        btnExportarDades = new JButton("Exportar dades");
+        btnExportarDades = new JButton("Exportar dades i Reports");
         btnExportarDades.setBounds(550, 100, 200, 50);
         btnExportarDades.addActionListener(this);
         add(btnExportarDades);
@@ -116,10 +117,14 @@ public class V_MenuPrincipal extends JFrame implements ActionListener {
                 Logger.getLogger(V_MenuPrincipal.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else if (e.getSource() == btnExportarDades) {
-            System.out.println("Exportar datos...");
+            this.dispose();
+            try {
+                new V_ExportacionsReport(this.gDB).setVisible(true);
+            } catch (ExceptionClubDB ex) {
+                Logger.getLogger(V_MenuPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+            }  
         } else if (e.getSource() == btnLogout) {
-            System.out.println("Cerrar sesión...");
-            // Regresar al login o cerrar la aplicación
+
             dispose();
             new V_login().setVisible(true);
         }
